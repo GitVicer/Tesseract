@@ -1,36 +1,54 @@
-from flask import Flask, request
 import pytesseract
 import urllib.request
-
-app = Flask(__name__)
+import pandas
 
 def isNumber(str):
     
     for char in str:
-        print(char.isdigit())
         if char.isdigit() != True and char != '-' and char != '+' and char != " ":
             return False
     return True 
 
-@app.route('/upload_image', methods = ['POST'])
-def image_to_text():
 
-    image_url = request.form.get('image_url')
-
+def image_to_text(image_url):
     urllib.request.urlretrieve(image_url, 'uploaded_image')
-
+    
     text = pytesseract.image_to_string('uploaded_image', lang='eng')
+    if text == "":
+        return 'Not able to detect text in the image'
     
-    index = text.index('+')
+    try:
+        index = text.index('+')
+    except:
+        index = 0
+        return '"+" not found in the text'
     
-    num =  text[index:index+15]
+    num = text[index:index+15]
     
     if isNumber(num):
         return num
     else:
-        return "This program searches for a valid number on the fact that if there is a '+' followed by digits and '-'"
-            
+        return "Not found"
+        
 
+
+df = pandas.read_excel('Untitled.xlsx')
+
+df['screenshot_google_vision_url'] = df['screenshot_google_vision_url'].astype(str)
+
+
+for index,row in df.iterrows():
+    try:
+        url = row['screenshot_google_vision_url']
+        text = image_to_text(url)
+        df.at[index, 'Text'] = text
+    except ValueError:
+        text = 'url not found'
+        df.at[index, 'Text'] = text
+
+    
+
+df.to_excel('output.xlsx')
 
 
 
