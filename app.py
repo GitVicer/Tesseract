@@ -1,54 +1,53 @@
+import pandas
 import pytesseract
 import urllib.request
-import pandas
 
+# Function to check for a valid phone number
 def isNumber(str):
-    
     for char in str:
         if char.isdigit() != True and char != '-' and char != '+' and char != " ":
             return False
     return True 
 
+# Function to convert image to to text
+def image_to_text(url):
 
-def image_to_text(image_url):
-    urllib.request.urlretrieve(image_url, 'uploaded_image')
+    urllib.request.urlretrieve(url, 'uploaded_image')
     
     text = pytesseract.image_to_string('uploaded_image', lang='eng')
     if text == "":
         return 'Not able to detect text in the image'
     
-    try:
-        index = text.index('+')
-    except:
-        index = 0
-        return '"+" not found in the text'
-    
-    num = text[index:index+15]
-    
-    if isNumber(num):
-        return num
-    else:
-        return "Not found"
-        
+    for i in range(len(text)):
+        if text[i] == '+':
+            num = text[i:i+15]
+            if isNumber(num):
+                return num
+            else:
+                pass
+    return text    
 
-
-df = pandas.read_excel('Untitled.xlsx')
+# Manipulating the excel sheet
+df = pandas.read_excel('sheet 3.xlsx')
 
 df['screenshot_google_vision_url'] = df['screenshot_google_vision_url'].astype(str)
 
-
-for index,row in df.iterrows():
+for index, row in df.iterrows():
     try:
         url = row['screenshot_google_vision_url']
         text = image_to_text(url)
         df.at[index, 'Text'] = text
-    except ValueError:
-        text = 'url not found'
-        df.at[index, 'Text'] = text
+    except:
+        text = 'url not found'  
+        df.at[index, 'Text'] = text          
 
+df.to_excel('output.xlsx')  
     
+        
+    
+        
+            
 
-df.to_excel('output.xlsx')
 
 
 
